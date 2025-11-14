@@ -151,8 +151,8 @@ plot_customer_balance(pd.read_csv("daily_entries.csv"),"Customer_12")
 
 def plot_all_entries(df, start_Day, end_Day):
     """ Function to plot all the entires within a period per customer"""
-    sub = df[((df["Month"]*30+df["Day"]) >= pd.to_Daytime(start_Day)) &
-             ((df["Month"]*30+df["Day"]) <= pd.to_Daytime(end_Day))]
+    sub = df[((df["Month"]*30+df["Day"]) >= start_Day) &
+             ((df["Month"]*30+df["Day"]) <= end_Day)]
 
     if sub.empty:
         print("No entries in this Day range.")
@@ -173,8 +173,8 @@ plot_all_entries(pd.read_csv("daily_entries.csv"),0,365)
 
 def plot_negative_transactions(df, start_Day, end_Day):
     """ Function to plot all negative transactions within period"""
-    sub = df[(df["Day"] >= pd.to_Daytime(start_Day)) &
-             (df["Day"] <= pd.to_Daytime(end_Day)) &
+    sub = df[(df["Day"] >= start_Day) &
+             (df["Day"] <= end_Day) &
              (df["Balance"] < 0)]
 
     if sub.empty:
@@ -188,6 +188,8 @@ def plot_negative_transactions(df, start_Day, end_Day):
     plt.ylabel("Negative Balances")
     plt.grid(True)
     plt.show()
+
+plot_negative_transactions(pd.read_csv("daily_entries.csv"),0,365)
 
 #plot_all_customer_entries(df, "John Doe")
 #plot_entries_on_day(df, month=3, day=15)
