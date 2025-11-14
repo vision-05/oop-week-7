@@ -2,14 +2,7 @@ import pandas as pd
 import random
 from matplotlib import pyplot as plt
 import calendar
-
-def daily_entries_2_to_monthly():
-    """Take daily entries 2 and convert to monthly entry"""
-    daily_to_monthly("daily_entries_2.csv", "monthly_balances.csv")
-    daily1 = pd.read_csv("daily_entries_1.csv")
-    daily2 = pd.read_csv("daily_entries_2.csv")
-    pd.merge()
-    pass
+import numpy as np
 
 def dataset_crafting():
     n_customers = 15
@@ -38,10 +31,8 @@ def dataset_crafting():
     # Create DataFrame
     df = pd.DataFrame(records, columns=["CustomerName", "CustomerID", "Day", "Month", "Balance"])
     # Save CSV
-    #df.to_csv("daily_entries.csv", index=False)
-    #print(df.head())
-
-dataset_crafting()
+    df.to_csv("daily_entries.csv", index=False)
+    return df
 
 def daily_to_monthly (filename = "daily_entries.csv" , outfile = "monthly_balances.csv"):
     # load the daily entries csv file 
@@ -76,14 +67,24 @@ def daily_to_monthly (filename = "daily_entries.csv" , outfile = "monthly_balanc
     grouped.to_csv(outfile, index=False)
     print(f"Wrote {len(grouped)} rows to {outfile}")
     print(grouped)
+    return grouped
 
-daily_to_monthly()
+def daily_entries_2_to_monthly():
+    """Take daily entries 2 and convert to monthly entry"""
+    daily_to_monthly("daily_entries_2.csv", "monthly_balances.csv")
+    daily1 = pd.read_csv("daily_entries_2.csv", skipinitialspace=True)
+    daily2 = pd.read_csv("daily_entries.csv", skipinitialspace=True)
+    daily1.merge(daily2, on="CustomerName", how="outer")
+    
+    daily_tot = pd.concat([daily1,daily2]).groupby(["CustomerID","CustomerName","Month","Day"]).sum()
+    daily_tot.to_csv("daily_total.csv")
+    return daily_tot
 
 
 def load_csv(filepath="daily_entries_total.csv"):
     """ Function to load the "daily_entries_total.csv" CSV file and return  """
     try:
-        df = pd.read_csv(filepath, parse_Days=["Day"])
+        df = pd.read_csv(filepath)
         return df
     except FileNotFoundError:
         print("Error: CSV file not found.")
@@ -188,29 +189,27 @@ def plot_negative_transactions(df, start_Day, end_Day):
     plt.grid(True)
     plt.show()
 
-
-
-    df = load_csv()
-
-    plot_all_customer_entries(df, "John Doe")
-    plot_entries_on_day(df, month=3, day=15)
-    plot_customer_balance(df, 42)
-    plot_all_entries(df, "2024-01-01", "2024-02-01")
-    plot_negative_transactions(df, "2024-03-01", "2024-03-31")
-
-
-    return df
+#plot_all_customer_entries(df, "John Doe")
+#plot_entries_on_day(df, month=3, day=15)
+#plot_customer_balance(df, 42)
+#plot_all_entries(df, "2024-01-01", "2024-02-01")
+#plot_negative_transactions(df, "2024-03-01", "2024-03-31")
 
 def insert_noise():
     "Insert random NaN values at random positions"
-    df2 = daily_to_monthly(filename = "dataflow.csv")
+    df2 = load_csv("daily_entries.csv")
+    
     num_noisy_cells = int(df2.shape[0]*df2.shape[1] * 0.1)
     
     # Generate random indices for cells to replace
     for _ in range(num_noisy_cells):
         random_row = random.randint(0, df2.shape[0])
-        random_col = random.randint(0, df2.shape[1])
-        df2.iloc[random_row, random_col] = float("nan")
+        df2.iloc[random_row, 4] = np.nan
     
-    df2.to_csv("daily_entries_2.csv")
+    df2.to_csv("daily_entries_2.csv", index=False)
     return df2
+
+dataset_crafting()
+daily_to_monthly()
+insert_noise()
+daily_entries_2_to_monthly()
