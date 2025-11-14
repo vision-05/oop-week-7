@@ -91,32 +91,50 @@ def load_csv(filepath="daily_entries_total.csv"):
         return None
 
 
+def _compute_day_of_year(df, year=2025):
+    """Return a Series with the day-of-year for each row using Month and Day columns.
+
+    - If Month/Day cannot be converted to a valid date, the result will be NaN for that row.
+    - Uses the provided `year` (default 2025) because the CSV doesn't include a year column.
+    """
+    if not set(["Month", "Day"]).issubset(df.columns):
+        return pd.Series([pd.NA] * len(df), index=df.index)
+
+    months = pd.to_numeric(df["Month"], errors="coerce")
+    days = pd.to_numeric(df["Day"], errors="coerce")
+    try:
+        dates = pd.to_datetime({"year": year, "month": months, "day": days}, errors="coerce")
+        return dates.dt.dayofyear
+    except Exception:
+        # Fallback: approximate but keep NaN semantics
+        return pd.Series([pd.NA] * len(df), index=df.index)
+
+
 
 def plot_all_customer_entries(df, customer):
     """ Function to plots all the entries of the customer given customer name or ID"""
 
-    sub = df[(df["CustomerID"] == customer) | (df["CustomerName"] == customer)]
+    sub = df[(df["CustomerID"] == customer) | (df.get("CustomerName") == customer)]
     if sub.empty:
         print("No entries found for customer:", customer)
         return
+
+    # compute accurate day-of-year using helper
+    day_of_year = _compute_day_of_year(sub).fillna(0).astype(int)
+    y = pd.to_numeric(sub.get("Balance", pd.Series([0]*len(sub))), errors="coerce").fillna(0)
+
     plt.figure(figsize=(10,5))
-    sub2 = [sub["Month"]*30+sub["Day"]]
-    #plt.scatter(sub["Day"], sub["Balance"], marker="o")
-    plt.scatter(sub2, sub2, marker="o")
+    plt.scatter(day_of_year, y, marker="o")
     plt.title(f"All Entries for Customer: {customer}")
-    plt.xlabel("Day")
+    plt.xlabel("Day of Year")
     plt.ylabel("Balance")
     plt.grid(True)
     plt.show()
 
-plot_all_customer_entries(pd.read_csv("daily_entries.csv"),"Customer_12")
 
 def plot_entries_on_day(df, month, day):
     """ Function to plot all entries on the day when given a day of the year"""
     sub = df[(df["Month"]== month) & (df["Day"] == day)]
-
-    if sub.empty:
-        raise Exception(f"No entries exist on {month}/{day}")
 
     plt.figure(figsize=(10,5))
     plt.scatter(sub["CustomerName"], sub["Balance"])
@@ -125,8 +143,6 @@ def plot_entries_on_day(df, month, day):
     plt.ylabel("Balance")
     plt.xticks(rotation=45)
     plt.show()
-
-plot_entries_on_day(pd.read_csv("daily_entries.csv"),7,21)
 
 def plot_customer_balance(df, customer):
     """ Function to plot balance of the customer per month (in grouped column bars)"""
@@ -147,55 +163,54 @@ def plot_customer_balance(df, customer):
     plt.grid(True)
     plt.show()
 
-plot_customer_balance(pd.read_csv("daily_entries.csv"),"Customer_12")
+
 
 def plot_all_entries(df, start_Day, end_Day):
     """ Function to plot all the entires within a period per customer"""
-    sub = df[((df["Month"]*30+df["Day"]) >= start_Day) &
-             ((df["Month"]*30+df["Day"]) <= end_Day)]
 
+    # compute day-of-year for entire df and filter by provided start/end (assumed in 1..366)
+    doy = _compute_day_of_year(df)
+    mask = doy.notna() & (doy >= start_Day) & (doy <= end_Day)
+    sub = df[mask].copy()
     if sub.empty:
         print("No entries in this Day range.")
         return
 
+    sub["_day_of_year"] = _compute_day_of_year(sub).astype(int)
+
     plt.figure(figsize=(10,5))
     for customer, group in sub.groupby("CustomerName"):
-        plt.scatter(group["Day"], group["Balance"], marker="o", label=customer)
+        plt.scatter(group["_day_of_year"], group["Balance"], marker="o", label=customer)
 
     plt.title(f"Entries from {start_Day} to {end_Day}")
-    plt.xlabel("Day")
+    plt.xlabel("Day of Year")
     plt.ylabel("Balance")
     plt.legend()
     plt.grid(True)
     plt.show()
 
-plot_all_entries(pd.read_csv("daily_entries.csv"),0,365)
 
 def plot_negative_transactions(df, start_Day, end_Day):
     """ Function to plot all negative transactions within period"""
-    sub = df[(df["Day"] >= start_Day) &
-             (df["Day"] <= end_Day) &
-             (df["Balance"] < 0)]
+
+    doy = _compute_day_of_year(df)
+    mask = doy.notna() & (doy >= start_Day) & (doy <= end_Day) & (df["Balance"] < 0)
+    sub = df[mask].copy()
 
     if sub.empty:
         print("No negative transactions in this period.")
         return
 
+    sub["_day_of_year"] = _compute_day_of_year(sub).astype(int)
+
     plt.figure(figsize=(10,5))
-    plt.bar(sub["Day"], sub["Balance"])
+    plt.bar(sub["_day_of_year"], sub["Balance"])
     plt.title(f"Negative Transactions from {start_Day} to {end_Day}")
-    plt.xlabel("Day")
+    plt.xlabel("Day of Year")
     plt.ylabel("Negative Balances")
     plt.grid(True)
     plt.show()
 
-plot_negative_transactions(pd.read_csv("daily_entries.csv"),0,365)
-
-#plot_all_customer_entries(df, "John Doe")
-#plot_entries_on_day(df, month=3, day=15)
-#plot_customer_balance(df, 42)
-#plot_all_entries(df, "2024-01-01", "2024-02-01")
-#plot_negative_transactions(df, "2024-03-01", "2024-03-31")
 
 def insert_noise(noise_frac=0.1):
     "Insert random NaN values at random positions"
@@ -220,3 +235,30 @@ print(initial)
 print(d2m)
 print(noisy)
 print(d2mnoise)
+dataset_crafting()
+daily_to_monthly()
+insert_noise()
+daily_entries_2_to_monthly()
+
+# Load the generated CSV once and pick values from the file instead of hard-coding
+df = pd.read_csv("daily_entries.csv", skipinitialspace=True)
+
+# choose a customer from the file (prefer CustomerName, fall back to CustomerID)
+if "CustomerName" in df.columns and not df["CustomerName"].dropna().empty:
+    customer_choice = df["CustomerName"].dropna().unique()[0]
+else:
+    customer_choice = df["CustomerID"].dropna().unique()[0]
+
+# choose a sample month/day from the file for plotting entries-on-day
+if set(["Month", "Day"]).issubset(df.columns) and not df.dropna(subset=["Month", "Day"]).empty:
+    sample = df.dropna(subset=["Month", "Day"]).iloc[0]
+    sample_month = int(sample["Month"])
+    sample_day = int(sample["Day"])
+else:
+    sample_month, sample_day = 1, 1
+
+plot_all_customer_entries(df, customer_choice)
+plot_entries_on_day(df, sample_month, sample_day)
+plot_customer_balance(df, customer_choice)
+plot_all_entries(df, 0, 365)
+plot_negative_transactions(df, 0, 365)
