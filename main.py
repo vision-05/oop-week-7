@@ -20,14 +20,14 @@ def dataset_crafting():
     records = []
     for i in idx:
         name, cust_id = customers[i]
-    # Pick a random year-month pair
-    year = 2025
-    month = random.randint(1, 12)
-    # Random valid day in that month
-    day = random.randint(1, calendar.monthrange(year, month)[1])
-    # Random value between -15.00 and 15.00
-    amount = round(random.uniform(-15, 15), 2)
-    records.append([name, cust_id, day, month, amount])
+        # Pick a random year-month pair
+        year = 2025
+        month = random.randint(1, 12)
+        # Random valid day in that month
+        day = random.randint(1, calendar.monthrange(year, month)[1])
+        # Random value between -15.00 and 15.00
+        amount = round(random.uniform(-15, 15), 2)
+        records.append([name, cust_id, day, month, amount])
     # Create DataFrame
     df = pd.DataFrame(records, columns=["CustomerName", "CustomerID", "Day", "Month", "Balance"])
     # Save CSV
@@ -193,21 +193,26 @@ def plot_negative_transactions(df, start_date, end_date):
 #plot_all_entries(df, "2024-01-01", "2024-02-01")
 #plot_negative_transactions(df, "2024-03-01", "2024-03-31")
 
-def insert_noise():
+def insert_noise(noise_frac=0.1):
     "Insert random NaN values at random positions"
     df2 = load_csv("daily_entries.csv")
     
-    num_noisy_cells = int(df2.shape[0]*df2.shape[1] * 0.1)
+    num_noisy_cells = int(df2.shape[0]*df2.shape[1] * noise_frac)
     
     # Generate random indices for cells to replace
     for _ in range(num_noisy_cells):
-        random_row = random.randint(0, df2.shape[0])
-        df2.iloc[random_row, 4] = np.nan
-    
+        random_row = random.randint(0, df2.shape[0]-1)
+        random_col = random.randint(0, df2.shape[1]-1)
+        df2.iloc[random_row, random_col] = np.nan
     df2.to_csv("daily_entries_2.csv", index=False)
     return df2
 
-dataset_crafting()
-daily_to_monthly()
-insert_noise()
-daily_entries_2_to_monthly()
+initial = dataset_crafting()
+d2m = daily_to_monthly()
+noisy = insert_noise()
+d2mnoise = daily_entries_2_to_monthly()
+
+print(initial)
+print(d2m)
+print(noisy)
+print(d2mnoise)
