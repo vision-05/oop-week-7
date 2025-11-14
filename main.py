@@ -74,6 +74,7 @@ def daily_entries_2_to_monthly():
     daily1 = pd.read_csv("daily_entries_2.csv", skipinitialspace=True)
     daily2 = pd.read_csv("daily_entries.csv", skipinitialspace=True)
     daily1.merge(daily2, on="CustomerName", how="outer")
+    
     daily_tot = pd.concat([daily1,daily2]).groupby(["CustomerID","CustomerName","Month","Day"]).sum()
     daily_tot.to_csv("daily_total.csv")
     return daily_tot
@@ -194,6 +195,7 @@ def plot_negative_transactions(df, start_date, end_date):
 def insert_noise():
     "Insert random NaN values at random positions"
     df2 = load_csv("daily_entries.csv")
+    
     num_noisy_cells = int(df2.shape[0]*df2.shape[1] * 0.1)
     
     # Generate random indices for cells to replace
@@ -201,7 +203,7 @@ def insert_noise():
         random_row = random.randint(0, df2.shape[0])
         df2.iloc[random_row, 4] = np.nan
     
-    df2.to_csv("daily_entries_2.csv")
+    df2.to_csv("daily_entries_2.csv", index=False)
     return df2
 
 dataset_crafting()
