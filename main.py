@@ -31,8 +31,8 @@ def dataset_crafting():
     # Create DataFrame
     df = pd.DataFrame(records, columns=["CustomerName", "CustomerID", "Day", "Month", "Balance"])
     # Save CSV
-    #df.to_csv("daily_entries.csv", index=False)
-    #print(df.head())
+    df.to_csv("daily_entries.csv", index=False)
+    return df
 
 def daily_to_monthly (filename = "daily_entries.csv" , outfile = "monthly_balances.csv"):
     # load the daily entries csv file 
@@ -67,6 +67,7 @@ def daily_to_monthly (filename = "daily_entries.csv" , outfile = "monthly_balanc
     grouped.to_csv(outfile, index=False)
     print(f"Wrote {len(grouped)} rows to {outfile}")
     print(grouped)
+    return grouped
 
 def daily_entries_2_to_monthly():
     """Take daily entries 2 and convert to monthly entry"""
