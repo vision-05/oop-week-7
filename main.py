@@ -210,5 +210,5 @@ def insert_noise():
         random_col = random.randint(0, df2.shape[1])
         df2.iloc[random_row, random_col] = float("nan")
     
-
-
+    df2.to_csv("daily_entries_2.csv")
+    return df2
