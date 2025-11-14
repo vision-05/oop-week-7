@@ -1,0 +1,12 @@
+daily.csv
+
+CustomerName CustomerId Day Month Balance
+Aayan           2        13  01    -10
+Aayan           2        15  01     -5
+Yash            3        18  02     -3
+
+monthly.csv
+
+CustomerName CustomerId Month Balance
+Aayan           2        01     -15
+Yash            3        02      -3
