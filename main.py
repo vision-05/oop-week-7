@@ -33,15 +33,15 @@ def dataset_crafting():
     # Random valid day in that month
     day = random.randint(1, calendar.monthrange(year, month)[1])
     # Random value between -15.00 and 15.00
-    amount = round(random.uniform(-15, 15), 2)
-    records.append([name, cust_id, day, month, amount])
+    Balance = round(random.uniform(-15, 15), 2)
+    records.append([name, cust_id, day, month, Balance])
     # Create DataFrame
     df = pd.DataFrame(records, columns=["CustomerName", "CustomerID", "Day", "Month", "Balance"])
     # Save CSV
     #df.to_csv("daily_entries.csv", index=False)
     #print(df.head())
 
-
+dataset_crafting()
 
 def daily_to_monthly (filename = "daily_entries.csv" , outfile = "monthly_balances.csv"):
     # load the daily entries csv file 
@@ -83,7 +83,7 @@ daily_to_monthly()
 def load_csv(filepath="daily_entries_total.csv"):
     """ Function to load the "daily_entries_total.csv" CSV file and return  """
     try:
-        df = pd.read_csv(filepath, parse_dates=["date"])
+        df = pd.read_csv(filepath, parse_Days=["Day"])
         return df
     except FileNotFoundError:
         print("Error: CSV file not found.")
@@ -94,47 +94,49 @@ def load_csv(filepath="daily_entries_total.csv"):
 def plot_all_customer_entries(df, customer):
     """ Function to plots all the entries of the customer given customer name or ID"""
 
-    sub = df[(df["customer_id"] == customer) | (df["customer_name"] == customer)]
-
+    sub = df[(df["CustomerID"] == customer) | (df["CustomerName"] == customer)]
     if sub.empty:
         print("No entries found for customer:", customer)
         return
-
     plt.figure(figsize=(10,5))
-    plt.plot(sub["date"], sub["amount"], marker="o")
+    sub2 = [sub["Month"]*30+sub["Day"]]
+    #plt.scatter(sub["Day"], sub["Balance"], marker="o")
+    plt.scatter(sub2, sub2, marker="o")
     plt.title(f"All Entries for Customer: {customer}")
-    plt.xlabel("Date")
-    plt.ylabel("Amount")
+    plt.xlabel("Day")
+    plt.ylabel("Balance")
     plt.grid(True)
     plt.show()
 
+plot_all_customer_entries(pd.read_csv("daily_entries.csv"),"Customer_12")
 
 def plot_entries_on_day(df, month, day):
     """ Function to plot all entries on the day when given a day of the year"""
-    sub = df[(df["date"].dt.month == month) & (df["date"].dt.day == day)]
+    sub = df[(df["Month"]== month) & (df["Day"] == day)]
 
     if sub.empty:
         raise Exception(f"No entries exist on {month}/{day}")
 
     plt.figure(figsize=(10,5))
-    plt.bar(sub["customer_name"], sub["amount"])
+    plt.scatter(sub["CustomerName"], sub["Balance"])
     plt.title(f"Entries on {month}/{day}")
     plt.xlabel("Customer")
-    plt.ylabel("Amount")
+    plt.ylabel("Balance")
     plt.xticks(rotation=45)
     plt.show()
 
+plot_entries_on_day(pd.read_csv("daily_entries.csv"),7,21)
 
 def plot_customer_balance(df, customer):
     """ Function to plot balance of the customer per month (in grouped column bars)"""
-    sub = df[(df["customer_id"] == customer) | (df["customer_name"] == customer)]
+    sub = df[(df["CustomerID"] == customer) | (df["CustomerName"] == customer)]
 
     if sub.empty:
         print("No entries found for customer:", customer)
         return
 
-    sub["month"] = sub["date"].dt.to_period("M")
-    monthly_balance = sub.groupby("month")["amount"].sum()
+    #sub["month"] = sub["Day"].dt.to_period("M")
+    monthly_balance = sub.groupby("Month")["Balance"].sum()
 
     plt.figure(figsize=(10,5))
     monthly_balance.plot(kind="bar")
@@ -144,45 +146,45 @@ def plot_customer_balance(df, customer):
     plt.grid(True)
     plt.show()
 
+plot_customer_balance(pd.read_csv("daily_entries.csv"),"Customer_12")
 
-
-def plot_all_entries(df, start_date, end_date):
+def plot_all_entries(df, start_Day, end_Day):
     """ Function to plot all the entires within a period per customer"""
-    sub = df[(df["date"] >= pd.to_datetime(start_date)) &
-             (df["date"] <= pd.to_datetime(end_date))]
+    sub = df[((df["Month"]*30+df["Day"]) >= pd.to_Daytime(start_Day)) &
+             ((df["Month"]*30+df["Day"]) <= pd.to_Daytime(end_Day))]
 
     if sub.empty:
-        print("No entries in this date range.")
+        print("No entries in this Day range.")
         return
 
     plt.figure(figsize=(10,5))
-    for customer, group in sub.groupby("customer_name"):
-        plt.plot(group["date"], group["amount"], marker="o", label=customer)
+    for customer, group in sub.groupby("CustomerName"):
+        plt.scatter(group["Day"], group["Balance"], marker="o", label=customer)
 
-    plt.title(f"Entries from {start_date} to {end_date}")
-    plt.xlabel("Date")
-    plt.ylabel("Amount")
+    plt.title(f"Entries from {start_Day} to {end_Day}")
+    plt.xlabel("Day")
+    plt.ylabel("Balance")
     plt.legend()
     plt.grid(True)
     plt.show()
 
+plot_all_entries(pd.read_csv("daily_entries.csv"),0,365)
 
-
-def plot_negative_transactions(df, start_date, end_date):
+def plot_negative_transactions(df, start_Day, end_Day):
     """ Function to plot all negative transactions within period"""
-    sub = df[(df["date"] >= pd.to_datetime(start_date)) &
-             (df["date"] <= pd.to_datetime(end_date)) &
-             (df["amount"] < 0)]
+    sub = df[(df["Day"] >= pd.to_Daytime(start_Day)) &
+             (df["Day"] <= pd.to_Daytime(end_Day)) &
+             (df["Balance"] < 0)]
 
     if sub.empty:
         print("No negative transactions in this period.")
         return
 
     plt.figure(figsize=(10,5))
-    plt.bar(sub["date"], sub["amount"])
-    plt.title(f"Negative Transactions from {start_date} to {end_date}")
-    plt.xlabel("Date")
-    plt.ylabel("Negative Amounts")
+    plt.bar(sub["Day"], sub["Balance"])
+    plt.title(f"Negative Transactions from {start_Day} to {end_Day}")
+    plt.xlabel("Day")
+    plt.ylabel("Negative Balances")
     plt.grid(True)
     plt.show()
 
