@@ -14,5 +14,10 @@ def daily_to_monthly (filename = "dataflow.csv" , outfile = "monthly_balances.cs
     print(df)
     df.groupby("Month")["Balance"].sum()
     print(df.head())
+    return df
 
-daily_to_monthly()
+def insert_noise():
+    df2 = daily_to_monthly(filename = "dataflow.csv")
+
+
+    df2.to_csv("daily_entries_2.csv")
